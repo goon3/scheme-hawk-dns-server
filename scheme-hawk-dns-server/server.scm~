@@ -1,0 +1,40 @@
+(define (make-server loopfunc)
+	(let ((*socket #f)
+	      (*in #f)
+	      (*out #f)
+	      (*lastport #f)
+	      (*loopfunc loopfunc))
+
+	  	(define (open port)
+		  (set! *lastport port)
+		  (set! *socket (open-socket port))) 
+
+		(define (start port)
+		  (open port)
+		  (let loop ((s #f))
+		    	(lambda ()
+			  	(socket-accept *socket))
+			(lambda (in out)
+			  	  (set! *in in)
+				  (set! *out out)
+				  (*loopfunc in out)
+				  )))
+
+		(define (stop)
+			(close-input-port *in)
+			(close-output-port *out)
+			)
+
+		(define (restart)
+		  	(stop)
+			(if *lastport
+				(start *lastport)
+				(display "Could not restart - use start")))
+
+		(define (dispatch msg)
+			(cond ((eq? msg 'start) start)
+				((eq? msg 'stop) stop)
+				((eq? msg 'restart) restart)
+				(else (display "make-server : message not understood"))))
+
+		dispatch))
